@@ -1,0 +1,12 @@
+{
+  "name": "eeic2017bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Koki Takahashi <hakatasiloving@gmail.com> (http://hakatashi.com/)",
+  "license": "MIT"
+}
