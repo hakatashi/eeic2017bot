@@ -17,6 +17,7 @@ module.exports = () => getWiki.then((wiki) => {
 	let content = '';
 
 	const assignments = [];
+	const attachments = [];
 
 	const pushAssignment = () => {
 		if (h2 !== null && h3 !== null && dueDate !== null && dueTime !== null) {
@@ -63,7 +64,38 @@ module.exports = () => getWiki.then((wiki) => {
 
 	pushAssignment();
 
-	return Promise.all(assignments.map(assignment => redis.sismemberAsync('notified_assignments', assignment.id)));
+	return redis.saddAsync('temp', ...assignments.map(it => it.id)).then(() => (
+		Promise.all([
+			redis.sdiffAsync('temp', 'notified_assignments'),
+			redis.sdiffAsync('notified_assignments', 'temp'),
+		])
+	)).then(([additions, deletions]) => {
+		attachments.push(...additions.map((id) => {
+			const assignment = assignments.find(it => it.id === id);
+			return {
+				color: 'good',
+				title: `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`,
+				text: assignment.content,
+			};
+		}));
+
+		attachments.push(...deletions.map((id) => {
+			const [h2, h3] = id.split('###');
+			return {
+				color: 'danger',
+				title: `削除: ${h2} ${h3}`,
+			};
+		}));
+
+		slack.send({
+			text: '',
+			attachments,
+		});
+
+		return redis.delAsync('notified_assignments');
+	}).then(() => {
+		return redis.renameAsync('temp', 'notified_assignments');
+	});
 }).then((results) => {
 	console.log(results);
 });
