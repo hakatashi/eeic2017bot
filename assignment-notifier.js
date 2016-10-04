@@ -1,5 +1,6 @@
 const slack = require('./slack');
 const getWiki = require('./wiki');
+const redis = require('./redis');
 
 const hour = 60 * 60 * 1000;
 const now = Date.now();
@@ -19,7 +20,11 @@ module.exports = () => getWiki.then((wiki) => {
 
 	const pushAssignment = () => {
 		if (h2 !== null && h3 !== null && dueDate !== null && dueTime !== null) {
-			assignments.push({h2, h3, dueDate, dueTime, content: content.trim()});
+			assignments.push({
+				h2, h3, dueDate, dueTime,
+				content: content.trim(),
+				id: `${h2}###${h3}`,
+			});
 		}
 
 		dueDate = dueTime = null;
@@ -58,5 +63,7 @@ module.exports = () => getWiki.then((wiki) => {
 
 	pushAssignment();
 
-	console.log(assignments);
+	return Promise.all(assignments.map(assignment => redis.sismemberAsync('notified_assignments', assignment.id)));
+}).then((results) => {
+	console.log(results);
 });
