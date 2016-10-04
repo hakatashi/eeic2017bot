@@ -10,8 +10,10 @@ const wiki = new nodemw({
 
 Promise.promisifyAll(wiki);
 
-wiki.logInAsync('eeic2017bot', process.env.WIKI_PASSWORD).then(() => (
-	wiki.getAllPagesAsync()
-)).then((pages) => {
-	console.log(pages);
+module.exports = new Promise((resolve, reject) => {
+	wiki.logInAsync('eeic2017bot', process.env.WIKI_PASSWORD).then(() => {
+		resolve(wiki);
+	}).catch((error) => {
+		reject(error);
+	});
 });
