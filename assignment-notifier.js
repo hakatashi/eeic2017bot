@@ -1,11 +1,15 @@
+const moment = require('moment-timezone');
+
 const slack = require('./slack');
 const getWiki = require('./wiki');
 const redis = require('./redis');
 
 const hour = 60 * 60 * 1000;
-const now = Date.now();
 
-const currentHour = Math.round(now % (24 * hour) / hour + 9); // UTC+9
+const currentHour = (Math.round(Date.now() / hour) + 9) % 24; // UTC+9
+
+const now = moment.tz('Asia/Tokyo');
+const today = now.startOf('date');
 
 module.exports = () => getWiki.then((wiki) => {
 	return wiki.getArticleAsync('EEIC2017/課題一覧');
@@ -17,7 +21,6 @@ module.exports = () => getWiki.then((wiki) => {
 	let content = '';
 
 	const assignments = [];
-	const attachments = [];
 
 	const pushAssignment = () => {
 		if (h2 !== null && h3 !== null && dueDate !== null && dueTime !== null) {
@@ -70,6 +73,8 @@ module.exports = () => getWiki.then((wiki) => {
 			redis.sdiffAsync('notified_assignments', 'temp'),
 		])
 	)).then(([additions, deletions]) => {
+		const attachments = [];
+
 		attachments.push(...additions.map((id) => {
 			const assignment = assignments.find(it => it.id === id);
 			return {
@@ -87,15 +92,39 @@ module.exports = () => getWiki.then((wiki) => {
 			};
 		}));
 
-		slack.send({
-			text: '',
-			attachments,
-		});
+		if (attachments.length > 0) {
+			slack.send({
+				text: '課題情報を更新しました!',
+				attachments,
+			});
+		}
 
 		return redis.delAsync('notified_assignments');
 	}).then(() => {
 		return redis.renameAsync('temp', 'notified_assignments');
+	}).then(() => {
+		if (currentHour === 17) {
+			const attachments = [];
+
+			assignments.forEach((assignment) => {
+				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
+				const daysToDue = dueDate.diff(now, 'days', true);
+
+				if (daysToDue === 1) {
+					attachments.push({
+						color: 'warning',
+						title: `「${assignment.h2} ${assignment.h3}」は明日の${assignment.dueTime}が期限です!`,
+						text: assignment.content,
+					});
+				}
+			});
+
+			if (attachments.length > 0) {
+				slack.send({
+					text: '明日が期限の課題ですよ～',
+					attachments,
+				});
+			}
+		}
 	});
-}).then((results) => {
-	console.log(results);
 });
