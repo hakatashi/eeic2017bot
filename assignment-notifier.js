@@ -77,18 +77,24 @@ module.exports = () => getWiki.then((wiki) => {
 
 		attachments.push(...additions.map((id) => {
 			const assignment = assignments.find(it => it.id === id);
+			const title = `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`;
+
 			return {
 				color: 'good',
-				title: `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`,
+				title,
+				fallback: title,
 				text: assignment.content,
 			};
 		}));
 
 		attachments.push(...deletions.map((id) => {
 			const [h2, h3] = id.split('###');
+			const title = `削除: ${h2} ${h3}`;
+
 			return {
 				color: 'danger',
-				title: `削除: ${h2} ${h3}`,
+				title,
+				fallback: title,
 			};
 		}));
 
@@ -111,9 +117,11 @@ module.exports = () => getWiki.then((wiki) => {
 				const daysToDue = dueDate.diff(now, 'days', true);
 
 				if (daysToDue === 1) {
+					const title = `「${assignment.h2} ${assignment.h3}」は明日の${assignment.dueTime}が期限です!`;
 					attachments.push({
 						color: 'warning',
-						title: `「${assignment.h2} ${assignment.h3}」は明日の${assignment.dueTime}が期限です!`,
+						title,
+						fallback: title,
 						text: assignment.content,
 					});
 				}
