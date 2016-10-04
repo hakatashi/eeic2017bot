@@ -1,6 +1,9 @@
 {
   "name": "eeic2017bot",
   "version": "1.0.0",
+  "engines": {
+    "node": "~6.5.0"
+  },
   "description": "EEICたん",
   "main": "index.js",
   "scripts": {
