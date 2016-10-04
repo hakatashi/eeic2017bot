@@ -8,5 +8,11 @@
   },
   "keywords": [],
   "author": "Koki Takahashi <hakatasiloving@gmail.com> (http://hakatashi.com/)",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "node-slack": "0.0.7",
+    "nodemw": "^0.10.1",
+    "redis": "^2.6.2"
+  }
 }
