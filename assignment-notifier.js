@@ -1,4 +1,5 @@
 const moment = require('moment-timezone');
+const assert = require('assert');
 
 const slack = require('./slack');
 const getWiki = require('./wiki');
@@ -6,7 +7,7 @@ const redis = require('./redis');
 
 const hour = 60 * 60 * 1000;
 
-const currentHour = (Math.round(Date.now() / hour) + 9) % 24; // UTC+9
+const currentHour = 17;//(Math.round(Date.now() / hour) + 9) % 24; // UTC+9
 
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');
@@ -66,6 +67,8 @@ module.exports = () => getWiki.then((wiki) => {
 	});
 
 	pushAssignment();
+
+	assert(assignments.length > 5);
 
 	return redis.saddAsync('temp', ...assignments.map(it => it.id)).then(() => (
 		Promise.all([
