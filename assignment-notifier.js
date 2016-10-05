@@ -7,7 +7,7 @@ const redis = require('./redis');
 
 const hour = 60 * 60 * 1000;
 
-const currentHour = 17;//(Math.round(Date.now() / hour) + 9) % 24; // UTC+9
+const currentHour = (Math.round(Date.now() / hour) + 9) % 24; // UTC+9
 
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');
