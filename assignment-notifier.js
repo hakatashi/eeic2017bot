@@ -72,40 +72,43 @@ module.exports = () => getWiki.then((wiki) => {
 
 	return redis.saddAsync('temp', ...assignments.map(it => it.id)).then(() => (
 		Promise.all([
+			redis.existsAsync('notified_assignments'),
 			redis.sdiffAsync('temp', 'notified_assignments'),
 			redis.sdiffAsync('notified_assignments', 'temp'),
 		])
-	)).then(([additions, deletions]) => {
-		const attachments = [];
+	)).then(([keyExists, additions, deletions]) => {
+		if (keyExists) {
+			const attachments = [];
 
-		attachments.push(...additions.map((id) => {
-			const assignment = assignments.find(it => it.id === id);
-			const title = `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`;
+			attachments.push(...additions.map((id) => {
+				const assignment = assignments.find(it => it.id === id);
+				const title = `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`;
 
-			return {
-				color: 'good',
-				title,
-				fallback: title,
-				text: assignment.content,
-			};
-		}));
+				return {
+					color: 'good',
+					title,
+					fallback: title,
+					text: assignment.content,
+				};
+			}));
 
-		attachments.push(...deletions.map((id) => {
-			const [h2, h3] = id.split('###');
-			const title = `削除: ${h2} ${h3}`;
+			attachments.push(...deletions.map((id) => {
+				const [h2, h3] = id.split('###');
+				const title = `削除: ${h2} ${h3}`;
 
-			return {
-				color: 'danger',
-				title,
-				fallback: title,
-			};
-		}));
+				return {
+					color: 'danger',
+					title,
+					fallback: title,
+				};
+			}));
 
-		if (attachments.length > 0) {
-			slack.send({
-				text: '課題情報を更新しました!',
-				attachments,
-			});
+			if (attachments.length > 0) {
+				slack.send({
+					text: '課題情報を更新しました!',
+					attachments,
+				});
+			}
 		}
 
 		return redis.delAsync('notified_assignments');
