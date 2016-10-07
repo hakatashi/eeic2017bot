@@ -53,8 +53,8 @@ module.exports = () => getWiki.then((wiki) => {
 		} else if (match = line.match(/^===([^=]+)===$/)) {
 			pushAssignment();
 			h3 = match[1].trim();
-		} else if (match = line.match(/^\*([^*]+)$/)) {
-			const [name, value] = match[1].split(':').map(part => part.trim());
+		} else if (match = line.match(/^\*([^*]+?):(.+)$/)) {
+			const [name, value] = [match[1], match[2]].map(part => part.trim());
 
 			if (name === '期日') {
 				dueDate = value;
