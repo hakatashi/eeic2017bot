@@ -112,6 +112,7 @@ module.exports = () => getWiki.then((wiki) => {
 	}).then(() => {
 		return redis.renameAsync('temp', 'notified_assignments');
 	}).then(() => {
+		// Notify tomorrow's assignments at 17:00
 		if (currentHour === 17) {
 			const attachments = [];
 
@@ -134,6 +135,35 @@ module.exports = () => getWiki.then((wiki) => {
 				slack.send({
 					text: '明日が期限の課題ですよ～',
 					attachments,
+				});
+			}
+		}
+
+		// Notify next week's assignments at 10:00 Saturday
+		if (today.day() === 6 /* Saturday */ && currentHour === 10) {
+			const attachments = [];
+
+			assignments.forEach((assignment) => {
+				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
+				const daysToDue = dueDate.diff(now, 'days', true);
+				const dueDateString = dueDate.locale('ja').format('MM/DD (ddd)')
+
+				if (0 <= daysToDue && daysToDue <= 6) {
+					const title = `【${dueDateString} ${assignment.dueTime}】${assignment.h2} ${assignment.h3}`;
+					attachments.push({
+						color: 'good',
+						title,
+						fallback: title,
+						text: assignment.content,
+						dueDateUnix: dueDate.unix(),
+					});
+				}
+			});
+
+			if (attachments.length > 0) {
+				slack.send({
+					text: '来週の課題一覧です:notes:',
+					attachments: attachments.sort((a, b) => a.dueDateUnix - b.dueDateUnix),
 				});
 			}
 		}
