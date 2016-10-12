@@ -1,5 +1,6 @@
 const moment = require('moment-timezone');
 const assert = require('assert');
+const Promise = require('bluebird');
 
 const slack = require('./slack');
 const getWiki = require('./wiki');
@@ -12,7 +13,9 @@ const currentHour = (Math.round(Date.now() / hour) + 9) % 24; // UTC+9
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');
 
-module.exports = () => getWiki.then((wiki) => {
+module.exports = () => Promise.try(() => {
+	return getWiki;
+}).then((wiki) => {
 	return wiki.getArticleAsync('EEIC2017/課題一覧');
 }).then((page) => {
 	let h2 = null;
