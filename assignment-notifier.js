@@ -6,9 +6,10 @@ const slack = require('./slack');
 const getWiki = require('./wiki');
 const redis = require('./redis');
 
-const hour = 60 * 60 * 1000;
+const minute = 60 * 1000;
 
-const currentHour = (Math.round(Date.now() / hour) + 9) % 24; // UTC+9
+const currentHour = Math.floor(Math.round(Date.now() / (10 * minute)) % (6 * 24) / 6 + 9);
+const currentMinute = Math.round(Date.now() / (10 * minute)) % 6 * 10;
 
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');
@@ -119,7 +120,7 @@ module.exports = () => Promise.try(() => {
 		return redis.renameAsync('temp', 'notified_assignments');
 	}).then(() => {
 		// Notify tomorrow's assignments at 17:00
-		if (currentHour === 17) {
+		if (currentHour === 17 && currentMinute === 0) {
 			const attachments = [];
 
 			assignments.forEach((assignment) => {
@@ -146,7 +147,7 @@ module.exports = () => Promise.try(() => {
 		}
 
 		// Notify next week's assignments at 10:00 Saturday
-		if (today.day() === 6 /* Saturday */ && currentHour === 10) {
+		if (today.day() === 6 /* Saturday */ && currentHour === 10 && currentMinute === 0) {
 			const attachments = [];
 
 			assignments.forEach((assignment) => {
