@@ -1,6 +1,7 @@
 const moment = require('moment-timezone');
 const assert = require('assert');
 const Promise = require('bluebird');
+const getUrls = require('get-urls');
 
 const slack = require('./slack');
 const getWiki = require('./wiki');
@@ -29,10 +30,14 @@ module.exports = () => Promise.try(() => {
 
 	const pushAssignment = () => {
 		if (h2 !== null && h3 !== null && dueDate !== null && dueTime !== null) {
+			const urls = getUrls(content);
+			const imageUrl = urls.find(url => url.match(/(png|jpg|jpeg|bmp|gif)/));
+
 			assignments.push({
 				h2, h3, dueDate, dueTime,
 				content: content.trim(),
 				id: `${h2}###${h3}`,
+				imageUrl: imageUrl ? encodeURI(imageUrl) : undefined,
 			});
 		}
 
@@ -93,6 +98,7 @@ module.exports = () => Promise.try(() => {
 					title,
 					fallback: title,
 					text: assignment.content,
+					image_url: assignment.imageUrl,
 				};
 			}));
 
@@ -134,6 +140,7 @@ module.exports = () => Promise.try(() => {
 						title,
 						fallback: title,
 						text: assignment.content,
+						image_url: assignment.imageUrl,
 					});
 				}
 			});
@@ -162,6 +169,7 @@ module.exports = () => Promise.try(() => {
 						title,
 						fallback: title,
 						text: assignment.content,
+						image_url: assignment.imageUrl,
 						dueDateUnix: dueDate.unix(),
 					});
 				}
