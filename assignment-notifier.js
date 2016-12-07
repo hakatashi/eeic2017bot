@@ -91,10 +91,20 @@ module.exports = () => Promise.try(() => {
 
 			attachments.push(...additions.map((id) => {
 				const assignment = assignments.find(it => it.id === id);
-				const title = `新規登録: ${assignment.h2} ${assignment.h3} (～${assignment.dueDate})`;
+				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
+				const daysToDue = dueDate.diff(now, 'days');
+				const title = `新規登録: ${assignment.h2} ${assignment.h3}: ${daysToDue}日後(${assignment.dueDate})`;
+
+				const color = (() => {
+					if (daysToDue <= 3) {
+						return 'warning';
+					} else {
+						return 'good';
+					}
+				})();
 
 				return {
-					color: 'good',
+					color,
 					title,
 					fallback: title,
 					text: assignment.content,
