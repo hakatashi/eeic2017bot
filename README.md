@@ -1,5 +1,7 @@
 # EEIC2017 Bot
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/hakatashi/eeic2017bot.svg)](https://greenkeeper.io/)
+
 [EEIC](http://www.ee.t.u-tokyo.ac.jp/)2017のためのBotです。
 
 以下、主にEEIC2017のためのREADME。
