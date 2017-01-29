@@ -1,7 +1,11 @@
 const assignmentNotifier = require('./assignment-notifier');
+const davMonitor = require('./dav-monitor');
 const redis = require('./redis');
 
-assignmentNotifier().then(() => {
+Promise.all([
+	assignmentNotifier(),
+	davMonitor(),
+]).then(() => {
 	redis.end(true);
 	console.log('done.');
 });
