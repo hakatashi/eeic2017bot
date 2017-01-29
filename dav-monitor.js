@@ -20,7 +20,7 @@ module.exports = () => Promise.try(() => {
 	assert.strictEqual(data.status, 'OK');
 }).catch((error) => {
 	slack.send({
-		text: 'dav.eeic.jp seems down!',
+		text: '@channel dav.eeic.jp seems down!',
 		channel: '#server',
 		username: 'dav-monitor',
 		attachments: [{
