@@ -17,7 +17,7 @@ module.exports = () => Promise.try(() => {
 	const data = response.body;
 
 	assert(data);
-	assert.strictEqual(data.status, 'NG');
+	assert.strictEqual(data.status, 'OK');
 }).catch((error) => {
 	slack.send({
 		text: 'dav.eeic.jp seems down!',
