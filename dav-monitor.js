@@ -27,7 +27,7 @@ module.exports = () => Promise.try(() => {
 		console.log('dav status: FIXED');
 
 		slack.send({
-			text: 'dav.eeic.jp is now fixed! :raised_hands:'
+			text: 'dav.eeic.jp is now fixed! :raised_hands:',
 			channel: '#server',
 			username: 'dav-monitor',
 			attachments: [{
