@@ -6,11 +6,9 @@ const getUrls = require('get-urls');
 const slack = require('./slack');
 const getWiki = require('./wiki');
 const redis = require('./redis');
+const {currentHour, currentMinute} = require('./time');
 
 const minute = 60 * 1000;
-
-const currentHour = Math.floor(Math.round(Date.now() / (10 * minute)) % (6 * 24) / 6 + 9);
-const currentMinute = Math.round(Date.now() / (10 * minute)) % 6 * 10;
 
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');

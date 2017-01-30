@@ -3,6 +3,7 @@ const Promise = require('bluebird');
 const request = Promise.promisify(require("request"));
 const slack = require('./slack');
 const redis = require('./redis');
+const {currentMinute} = require('./time');
 
 module.exports = () => Promise.try(() => {
 	return request('https://dav.eeic.jp/dav/private/eeic2017/hakatashi/dav-status.json', {
@@ -28,6 +29,17 @@ module.exports = () => Promise.try(() => {
 		if (davStatus === 'true') {
 			slack.send({
 				text: '<!channel> dav.eeic.jp seems down!',
+				channel: '#server',
+				username: 'dav-monitor',
+				attachments: [{
+					color: 'danger',
+					title: error.message,
+					text: error.stack,
+				}],
+			});
+		} else if (currentMinute === 0) {
+			slack.send({
+				text: 'dav.eeic.jp is still down!',
 				channel: '#server',
 				username: 'dav-monitor',
 				attachments: [{
