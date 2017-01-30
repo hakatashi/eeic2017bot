@@ -8,8 +8,6 @@ const getWiki = require('./wiki');
 const redis = require('./redis');
 const {currentHour, currentMinute} = require('./time');
 
-const minute = 60 * 1000;
-
 const now = moment.tz('Asia/Tokyo');
 const today = now.startOf('date');
 
