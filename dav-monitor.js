@@ -21,12 +21,32 @@ module.exports = () => Promise.try(() => {
 	assert(data);
 	assert.strictEqual(data.status, 'OK');
 
+	return redis.getAsync('dav_status');
+}).then((davStatus) => {
+	if (davStatus === 'false') {
+		console.log('dav status: FIXED');
+
+		slack.send({
+			text: 'dav.eeic.jp is now fixed! :raised_hands:'
+			channel: '#server',
+			username: 'dav-monitor',
+			attachments: [{
+				color: 'good',
+				title: 'Status OK',
+			}],
+		});
+	} else {
+		console.log('dav status: UP');
+	}
+
 	return redis.setAsync('dav_status', 'true');
 }).catch((error) => {
 	Promise.try(() => {
 		return redis.getAsync('dav_status');
 	}).then((davStatus) => {
-		if (davStatus === 'true') {
+		if (davStatus !== 'false') {
+			console.log('dav status: WENT DOWN');
+
 			slack.send({
 				text: '<!channel> dav.eeic.jp seems down!',
 				channel: '#server',
@@ -38,6 +58,8 @@ module.exports = () => Promise.try(() => {
 				}],
 			});
 		} else if (currentMinute === 0) {
+			console.log('dav status: STILL DOWN (notify)');
+
 			slack.send({
 				text: 'dav.eeic.jp is still down!',
 				channel: '#server',
@@ -48,6 +70,8 @@ module.exports = () => Promise.try(() => {
 					text: error.stack,
 				}],
 			});
+		} else {
+			console.log('dav status: STILL DOWN');
 		}
 
 		return redis.setAsync('dav_status', 'false');
