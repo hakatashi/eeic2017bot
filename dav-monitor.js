@@ -2,6 +2,7 @@ const assert = require('assert');
 const Promise = require('bluebird');
 const request = Promise.promisify(require("request"));
 const slack = require('./slack');
+const redis = require('./redis');
 
 module.exports = () => Promise.try(() => {
 	return request('https://dav.eeic.jp/dav/private/eeic2017/hakatashi/dav-status.json', {
@@ -18,15 +19,25 @@ module.exports = () => Promise.try(() => {
 
 	assert(data);
 	assert.strictEqual(data.status, 'OK');
+
+	return redis.setAsync('dav_status', 'true');
 }).catch((error) => {
-	slack.send({
-		text: '<!channel> dav.eeic.jp seems down!',
-		channel: '#server',
-		username: 'dav-monitor',
-		attachments: [{
-			color: 'danger',
-			title: error.message,
-			text: error.stack,
-		}],
+	Promise.try(() => {
+		return redis.getAsync('dav_status');
+	}).then((davStatus) => {
+		if (davStatus === 'true') {
+			slack.send({
+				text: '<!channel> dav.eeic.jp seems down!',
+				channel: '#server',
+				username: 'dav-monitor',
+				attachments: [{
+					color: 'danger',
+					title: error.message,
+					text: error.stack,
+				}],
+			});
+		}
+
+		return redis.setAsync('dav_status', 'false');
 	});
 });
