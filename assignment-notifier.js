@@ -2,6 +2,7 @@ const moment = require('moment-timezone');
 const assert = require('assert');
 const Promise = require('bluebird');
 const getUrls = require('get-urls');
+const https = require('https');
 
 const slack = require('./slack');
 const getWiki = require('./wiki');
@@ -130,7 +131,18 @@ module.exports = () => Promise.try(() => {
 		return redis.delAsync('notified_assignments');
 	}).then(() => {
 		return redis.renameAsync('temp', 'notified_assignments');
-	}).then(() => {
+	}).then(() => (
+		// ping healthcheck.io
+		new Promise((resolve, reject) => {
+			https.get(process.env.HEALTHCHECK_ASSIGNMENT_CRON_URL, (res) => {
+				if (res.statusCode === 200) {
+					resolve();
+				} else {
+					reject(new Error('Healthcheck status isnt 200'));
+				}
+			});
+		})
+	)).then(() => {
 		// Notify tomorrow's assignments at 17:00
 		if (currentHour === 17 && currentMinute === 0) {
 			const attachments = [];
@@ -157,6 +169,16 @@ module.exports = () => Promise.try(() => {
 					attachments,
 				});
 			}
+
+			return new Promise((resolve, reject) => {
+				https.get(process.env.HEALTHCHECK_ASSIGNMENT_NOTIFICATION_URL, (res) => {
+					if (res.statusCode === 200) {
+						resolve();
+					} else {
+						reject(new Error('Healthcheck status isnt 200'));
+					}
+				});
+			});
 		}
 
 		// Notify next week's assignments at 10:00 Saturday
