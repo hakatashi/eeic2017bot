@@ -7,21 +7,40 @@ const https = require('https');
 const slack = require('./slack');
 const getWiki = require('./wiki');
 const redis = require('./redis');
-const {currentHour, currentMinute} = require('./time');
 
 const now = moment.tz('Asia/Tokyo');
-const today = now.startOf('date');
+const today = now.clone().startOf('date');
 
 module.exports = () => Promise.try(() => {
 	return getWiki;
-}).then((wiki) => {
-	return wiki.getArticleAsync('EEIC2017/課題一覧');
-}).then((page) => {
+}).then((wiki) => (
+	Promise.all([
+		wiki.getArticleAsync('EEIC2017/課題一覧'),
+		redis.getAsync('notified_daily_reminder'),
+		redis.getAsync('notified_weekly_reminder'),
+	])
+)).then(([page, notifiedDailyReminder, notifiedWeeklyReminder]) => {
 	let h2 = null;
 	let h3 = null;
 	let dueDate = null;
 	let dueTime = null;
 	let content = '';
+
+	const notifiedDailyReminderTime = moment(notifiedDailyReminder || 0);
+	const notifiedWeeklyReminderTime = moment(notifiedWeeklyReminder || 0);
+
+	const dailyReminderLastDue = today.clone().hour(17).isAfter(now) ?
+		today.clone().subtract(1, 'day').hour(17) :
+		today.clone().hour(17);
+	const weeklyReminderLastDue = today.clone().startOf('week').day(6).hour(10).isAfter(now) ?
+		today.clone().startOf('week').subtract(1, 'week').day(6).hour(10) :
+		today.clone().startOf('week').day(6).hour(10);
+	console.log({
+		notifiedWeeklyReminder,
+		notifiedDailyReminder,
+		dailyReminderLastDue,
+		weeklyReminderLastDue,
+	});
 
 	const assignments = [];
 
@@ -144,12 +163,12 @@ module.exports = () => Promise.try(() => {
 		})
 	)).then(() => {
 		// Notify tomorrow's assignments at 17:00
-		if (currentHour === 17 && currentMinute === 0) {
+		if (notifiedDailyReminderTime.isBefore(dailyReminderLastDue)) {
 			const attachments = [];
 
 			assignments.forEach((assignment) => {
 				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
-				const daysToDue = dueDate.diff(now, 'days', true);
+				const daysToDue = Math.ceil(dueDate.diff(now, 'days', true));
 
 				if (daysToDue === 1) {
 					const title = `「${assignment.h2} ${assignment.h3}」は明日の${assignment.dueTime}が期限です!`;
@@ -163,26 +182,28 @@ module.exports = () => Promise.try(() => {
 				}
 			});
 
-			if (attachments.length > 0) {
+			if (attachments.length > 0 || true) {
 				slack.send({
 					text: '明日が期限の課題ですよ～',
 					attachments,
 				});
 			}
 
-			return new Promise((resolve, reject) => {
-				https.get(process.env.HEALTHCHECK_ASSIGNMENT_NOTIFICATION_URL, (res) => {
-					if (res.statusCode === 200) {
-						resolve();
-					} else {
-						reject(new Error('Healthcheck status isnt 200'));
-					}
-				});
-			});
+			return redis.setAsync('notified_daily_reminder', now.toISOString()).then(() => (
+				new Promise((resolve, reject) => {
+					https.get(process.env.HEALTHCHECK_ASSIGNMENT_NOTIFICATION_URL, (res) => {
+						if (res.statusCode === 200) {
+							resolve();
+						} else {
+							reject(new Error('Healthcheck status isnt 200'));
+						}
+					});
+				})
+			));
 		}
 
 		// Notify next week's assignments at 10:00 Saturday
-		if (today.day() === 6 /* Saturday */ && currentHour === 10 && currentMinute === 0) {
+		if (notifiedWeeklyReminderTime.isBefore(weeklyReminderLastDue)) {
 			const attachments = [];
 
 			assignments.forEach((assignment) => {
@@ -209,6 +230,8 @@ module.exports = () => Promise.try(() => {
 					attachments: attachments.sort((a, b) => a.dueDateUnix - b.dueDateUnix),
 				});
 			}
+
+			return redis.setAsync('notified_weekly_reminder', now.toISOString());
 		}
 	});
 });
