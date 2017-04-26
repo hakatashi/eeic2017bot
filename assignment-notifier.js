@@ -182,7 +182,7 @@ module.exports = () => Promise.try(() => {
 				}
 			});
 
-			if (attachments.length > 0 || true) {
+			if (attachments.length > 0) {
 				slack.send({
 					text: '明日が期限の課題ですよ～',
 					attachments,
