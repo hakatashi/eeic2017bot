@@ -168,7 +168,7 @@ module.exports = () => Promise.try(() => {
 
 			assignments.forEach((assignment) => {
 				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
-				const daysToDue = Math.ceil(dueDate.diff(now, 'days', true));
+				const daysToDue = dueDate.diff(today, 'days');
 
 				if (daysToDue === 1) {
 					const title = `「${assignment.h2} ${assignment.h3}」は明日の${assignment.dueTime}が期限です!`;
@@ -208,7 +208,7 @@ module.exports = () => Promise.try(() => {
 
 			assignments.forEach((assignment) => {
 				const dueDate = moment.tz(assignment.dueDate, 'Asia/Tokyo');
-				const daysToDue = dueDate.diff(now, 'days', true);
+				const daysToDue = dueDate.diff(today, 'days');
 				const dueDateString = dueDate.locale('ja').format('MM/DD (ddd)')
 
 				if (0 <= daysToDue && daysToDue <= 6) {
