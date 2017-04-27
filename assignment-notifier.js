@@ -231,7 +231,17 @@ module.exports = () => Promise.try(() => {
 				});
 			}
 
-			return redis.setAsync('notified_weekly_reminder', now.toISOString());
+			return redis.setAsync('notified_weekly_reminder', now.toISOString()).then(() => (
+				new Promise((resolve, reject) => {
+					https.get(process.env.HEALTHCHECK_ASSIGNMENT_WEEKLY_URL, (res) => {
+						if (res.statusCode === 200) {
+							resolve();
+						} else {
+							reject(new Error('Healthcheck status isnt 200'));
+						}
+					});
+				})
+			));
 		}
 	});
 });
